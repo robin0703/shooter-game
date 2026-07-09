@@ -53,6 +53,21 @@ const LEVEL_CONFIG = {
     }
 };
 
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartPlayerX = 0;
+let touchStartPlayerY = 0;
+let isTouching = false;
+let isMobile = false;
+
+function checkMobile() {
+    isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        document.getElementById('mobileControls').style.display = 'flex';
+        document.getElementById('keyboardHint').style.display = 'none';
+    }
+}
+
 class Player {
     constructor() {
         this.width = 50;
@@ -540,59 +555,65 @@ function gameOver() {
 }
 
 function playShootSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = 800;
-    oscillator.type = 'square';
-    
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'square';
+        
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {}
 }
 
 function playExplosionSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = 200;
-    oscillator.type = 'sawtooth';
-    
-    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 200;
+        oscillator.type = 'sawtooth';
+        
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {}
 }
 
 function playGameOverSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-    oscillator.frequency.setValueAtTime(300, audioContext.currentTime + 0.2);
-    oscillator.frequency.setValueAtTime(200, audioContext.currentTime + 0.4);
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.8);
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(300, audioContext.currentTime + 0.2);
+        oscillator.frequency.setValueAtTime(200, audioContext.currentTime + 0.4);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.8);
+    } catch (e) {}
 }
 
 document.addEventListener('keydown', (e) => {
@@ -644,13 +665,54 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isTouching = true;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    
+    if (player) {
+        touchStartPlayerX = player.x;
+        touchStartPlayerY = player.y;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isTouching || !player) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    
+    player.x = Math.max(0, Math.min(CANVAS_WIDTH - player.width, touchStartPlayerX + deltaX));
+    player.y = Math.max(0, Math.min(CANVAS_HEIGHT - player.height, touchStartPlayerY + deltaY));
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+    isTouching = false;
+});
+
+function handleShootBtnDown() {
+    keys.shoot = true;
+}
+
+function handleShootBtnUp() {
+    keys.shoot = false;
+}
+
+window.handleShootBtnDown = handleShootBtnDown;
+window.handleShootBtnUp = handleShootBtnUp;
+
 initStars();
+checkMobile();
 
 let deferredPrompt = null;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('/shooter-game/service-worker.js', { scope: '/shooter-game/' })
             .then((registration) => {
                 console.log('Service Worker registered: ', registration.scope);
             })
@@ -687,6 +749,16 @@ function hideInstallButton() {
 }
 
 function installPWA() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    if (isIOS) {
+        document.getElementById('iosGuide').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('iosGuide').style.display = 'none';
+        }, 5000);
+        return;
+    }
+    
     if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
@@ -697,6 +769,11 @@ function installPWA() {
             }
             deferredPrompt = null;
         });
+    } else {
+        document.getElementById('installGuide').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('installGuide').style.display = 'none';
+        }, 5000);
     }
 }
 

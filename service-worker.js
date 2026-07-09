@@ -1,11 +1,11 @@
-const CACHE_NAME = 'shooter-game-v1';
+const CACHE_NAME = 'shooter-game-v2';
 const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/game.js',
-    '/manifest.json',
-    '/icon-192.png',
-    '/icon-512.png'
+    '/shooter-game/',
+    '/shooter-game/index.html',
+    '/shooter-game/game.js',
+    '/shooter-game/manifest.json',
+    '/shooter-game/icon-192.png',
+    '/shooter-game/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
