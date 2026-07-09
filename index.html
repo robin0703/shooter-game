@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#00ffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="打飞机">
+    <title>打飞机游戏</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        .game-container {
+            position: relative;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            overflow: hidden;
+        }
+        #gameCanvas {
+            display: block;
+            background: #0a0a1a;
+        }
+        .ui-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        .ui-panel div {
+            margin-bottom: 5px;
+        }
+        .life-bar {
+            display: inline-flex;
+            gap: 5px;
+        }
+        .life {
+            width: 25px;
+            height: 25px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff4757"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        .life.empty {
+            opacity: 0.3;
+        }
+        .level-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #00ffff;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+        }
+        .game-over.show {
+            display: block;
+        }
+        .game-over h1 {
+            color: #ff4757;
+            font-size: 48px;
+            text-shadow: 0 0 20px rgba(255, 71, 87, 0.8);
+            margin-bottom: 20px;
+        }
+        .game-over p {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(45deg, #ff6b6b, #ff4757);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 71, 87, 0.6);
+        }
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .start-screen h1 {
+            color: #00ffff;
+            font-size: 56px;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+            margin-bottom: 20px;
+        }
+        .start-screen p {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+        .start-screen .instructions {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .start-screen .instructions p {
+            margin-bottom: 10px;
+        }
+        .level-up {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff00;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+            animation: levelUpAnim 2s ease-out;
+            display: none;
+        }
+        .level-up.show {
+            display: block;
+        }
+        @keyframes levelUpAnim {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        .install-btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(45deg, #00ccff, #0066ff);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 102, 255, 0.4);
+        }
+        .install-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="480" height="720"></canvas>
+        
+        <div class="ui-panel">
+            <div class="life-bar">
+                <div class="life" id="life1"></div>
+                <div class="life" id="life2"></div>
+                <div class="life" id="life3"></div>
+            </div>
+            <div>分数: <span id="score">0</span></div>
+        </div>
+        
+        <div class="level-indicator">关卡 <span id="level">1</span></div>
+        
+        <div class="start-screen" id="startScreen">
+            <h1>🎮 打飞机</h1>
+            <p>消灭敌人，挑战更高分数！</p>
+            <button class="btn" onclick="startGame()">开始游戏</button>
+            <button class="btn install-btn" id="installBtn" onclick="installPWA()" style="background: linear-gradient(45deg, #00ccff, #0066ff); margin-top: 15px;">📱 安装到桌面</button>
+            <div class="instructions">
+                <p>⬆️ ⬇️ ⬅️ ➡️ 或 WASD 控制移动</p>
+                <p>空格键 发射子弹</p>
+                <p>躲避敌人的攻击！</p>
+            </div>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h1>游戏结束</h1>
+            <p>最终分数: <span id="finalScore">0</span></p>
+            <button class="btn" onclick="restartGame()">重新开始</button>
+        </div>
+        
+        <div class="level-up" id="levelUp">关卡升级！</div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
